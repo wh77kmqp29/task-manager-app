@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Report Manager — 業務日報・健康管理ツール</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #dbeafe;
+  --secondary: #059669;
+  --secondary-dark: #047857;
+  --secondary-light: #d1fae5;
+  --accent: #f59e0b;
+  --accent-dark: #d97706;
+  --accent-light: #fef3c7;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --white: #ffffff;
+  --g50: #f8fafc; --g100: #f1f5f9; --g200: #e2e8f0; --g300: #cbd5e1;
+  --g400: #94a3b8; --g500: #64748b; --g600: #475569; --g700: #334155;
+  --g800: #1e293b; --g900: #0f172a;
+  --text: #1e293b;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Segoe UI", Meiryo, sans-serif;
+  background: var(--g100);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ====== HEADER ====== */
+.app-header {
+  background: linear-gradient(135deg, var(--g900) 0%, var(--g800) 100%);
+  color: #fff;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.app-header .logo {
+  width: 40px; height: 40px;
+  background: var(--primary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+.app-header .titles { min-width: 0; }
+.app-header h1 { font-size: 17px; font-weight: 800; letter-spacing: 0.02em; }
+.app-header .sub { font-size: 11px; opacity: 0.5; margin-top: 1px; }
+.hdr-r {
+  margin-left: auto;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.hdr-r label { font-size: 10px; color: rgba(255,255,255,0.5); display: block; margin-bottom: 2px; }
+.hdr-r select, .hdr-r input {
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.15);
+  font-size: 13px; font-family: inherit;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  transition: var(--transition);
+}
+.hdr-r select:focus, .hdr-r input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.12);
+}
+.hdr-r select option { color: #000; background: #fff; }
+.hdr-r input { width: 130px; }
+.hdr-r input::placeholder { color: rgba(255,255,255,0.3); }
+
+.btn-h {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: var(--transition);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-bk { background: var(--accent); color: var(--g900); }
+.btn-bk:hover { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-rst { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+.btn-rst:hover { background: var(--danger); color: #fff; }
+
+/* ====== TABS ====== */
+.tab-bar {
+  display: flex;
+  background: var(--g800);
+  padding: 0 24px;
+  gap: 4px;
+  border-bottom: 2px solid var(--g700);
+}
+.tab-btn {
+  padding: 12px 32px;
+  background: none;
+  color: rgba(255,255,255,0.4);
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: var(--transition);
+  display: flex; align-items: center; gap: 6px;
+}
+.tab-btn:hover { color: rgba(255,255,255,0.7); }
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: var(--primary);
+  background: rgba(37,99,235,0.1);
+}
+
+/* ====== LAYOUT ====== */
+.main-wrap { padding: 20px 24px; max-width: 1500px; margin: 0 auto; }
+.tab-page { display: none; }
+.tab-page.active { display: block; }
+
+/* ====== WEEK BAR ====== */
+.week-bar {
+  display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.week-btn {
+  padding: 8px 20px;
+  border-radius: 24px;
+  border: 2px solid var(--g300);
+  background: #fff;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+.week-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+.week-btn.active {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+
+/* ====== DAY GRID ====== */
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 14px;
+}
+
+/* ====== DAY CARD ====== */
+.day-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: all var(--transition);
+  border: 1px solid var(--g200);
+}
+.day-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.dc-hd {
+  padding: 10px 16px;
+  font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dc-hd.hlt {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+}
+.dc-hd.dlt {
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+  color: #fff;
+}
+.dc-bd { padding: 14px 16px; }
+.fld { margin-bottom: 12px; }
+.fld:last-child { margin-bottom: 0; }
+.fld-lb {
+  font-size: 11px; font-weight: 700;
+  color: var(--g600);
+  margin-bottom: 4px;
+  letter-spacing: 0.03em;
+}
+
+/* ====== PILLS ====== */
+.pg { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+.pill {
+  padding: 4px 14px;
+  border-radius: 16px;
+  border: 1.5px solid var(--g300);
+  font-size: 11px; font-weight: 500;
+  cursor: pointer; user-select: none;
+  transition: all 0.15s;
+  background: #fff; color: var(--text);
+  display: inline-flex; align-items: center; gap: 3px;
+  white-space: nowrap;
+}
+.pill:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.pill.sel {
+  background: var(--primary); color: #fff; border-color: var(--primary);
+  box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+}
+.pill.sel-g {
+  background: var(--secondary); color: #fff; border-color: var(--secondary);
+  box-shadow: 0 1px 4px rgba(5,150,105,0.25);
+}
+.pill .pdel {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  display: none; align-items: center; justify-content: center;
+  font-size: 9px; line-height: 1;
+  cursor: pointer; margin-left: 2px;
+}
+.pill.cust .pdel { display: inline-flex; }
+.pill.cust .pdel:hover { background: rgba(255,255,255,0.5); }
+
+/* ====== ADD ROW ====== */
+.add-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; }
+.add-row input {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1.5px dashed var(--g300);
+  border-radius: var(--radius);
+  font-size: 11px; font-family: inherit;
+  min-width: 0;
+  transition: var(--transition);
+}
+.add-row input:focus { outline: none; border-color: var(--primary); background: var(--primary-light); }
+.add-row button {
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+.add-row button:hover { background: var(--primary-dark); }
+
+/* ====== INPUTS ====== */
+.ti {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid var(--g300);
+  border-radius: var(--radius);
+  font-size: 13px; font-family: inherit;
+  transition: var(--transition);
+  resize: vertical;
+  line-height: 1.6;
+}
+.ti:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.time-r { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.time-r select {
+  padding: 6px 8px;
+  border: 1.5px solid var(--g300);
+  border-radius: var(--radius);
+  font-size: 12px; font-family: inherit;
+  transition: var(--transition);
+}
+.time-r select:focus { outline: none; border-color: var(--primary); }
+.time-r span { font-size: 11px; color: var(--g500); font-weight: 600; }
+
+/* ====== SCHEDULE BLOCK ====== */
+.sb {
+  background: var(--g50);
+  border: 1px solid var(--g200);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  transition: var(--transition);
+}
+.sb:hover { border-color: var(--g300); }
+.sb-top {
+  display: flex; gap: 6px; align-items: center;
+  margin-bottom: 6px; flex-wrap: wrap;
+}
+.sb-top select, .sb-top input {
+  padding: 5px 8px;
+  border: 1.5px solid var(--g300);
+  border-radius: var(--radius);
+  font-size: 11px; font-family: inherit;
+  transition: var(--transition);
+}
+.sb-top select:focus, .sb-top input:focus {
+  outline: none;
+  border-color: var(--secondary);
+}
+.btn-rm {
+  width: 24px; height: 24px;
+  border-radius: 50%; border: none;
+  background: var(--danger-light); color: var(--danger);
+  cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.btn-rm:hover { background: var(--danger); color: #fff; }
+.btn-add-s {
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: var(--transition);
+}
+.btn-add-s.grn { background: var(--secondary-light); color: var(--secondary); }
+.btn-add-s.grn:hover { background: #a7f3d0; transform: translateY(-1px); }
+
+/* ====== FAB ====== */
+.fab {
+  position: fixed; bottom: 24px; right: 24px; z-index: 90;
+  padding: 14px 28px;
+  border-radius: 32px; border: none;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  font-size: 14px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+  font-family: inherit;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 8px;
+}
+.fab:hover { transform: translateY(-3px); box-shadow: 0 6px 28px rgba(37,99,235,0.45); }
+
+/* ====== TOAST ====== */
+.toast {
+  position: fixed; bottom: 80px; right: 24px; z-index: 200;
+  padding: 12px 22px;
+  border-radius: var(--radius-lg);
+  font-size: 13px; font-weight: 600; color: #fff;
+  opacity: 0; transform: translateY(16px);
+  transition: 0.3s ease; pointer-events: none;
+  box-shadow: var(--shadow-lg);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.ok { background: var(--secondary); }
+.toast.info { background: var(--primary); }
+.toast.warn { background: var(--accent-dark); }
+
+/* ====== MODAL ====== */
+.mo {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+.mo.show { display: flex; }
+.mo-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 540px; width: 92%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.mo-box h3 { font-size: 18px; margin-bottom: 12px; color: var(--g900); }
+.mo-box p { font-size: 13px; color: var(--g600); margin-bottom: 16px; line-height: 1.8; }
+.mo-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.mo-btns button {
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: var(--transition);
+}
+.mb-c { background: var(--g200); color: var(--g700); }
+.mb-c:hover { background: var(--g300); }
+.mb-ok { background: var(--danger); color: #fff; }
+.mb-ok:hover { background: #b91c1c; }
+.mb-green { background: var(--secondary); color: #fff; }
+.mb-green:hover { background: var(--secondary-dark); }
+
+.bk-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--g200);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  font-size: 13px;
+  transition: var(--transition);
+}
+.bk-item:hover { background: var(--g50); border-color: var(--g300); }
+.bk-item button {
+  padding: 5px 12px;
+  border-radius: 6px; border: none;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer; margin-left: 5px;
+  transition: var(--transition);
+}
+.bk-restore { background: var(--secondary-light); color: var(--secondary); }
+.bk-restore:hover { background: #a7f3d0; }
+.bk-dl { background: var(--primary-light); color: var(--primary); }
+.bk-dl:hover { background: #bfdbfe; }
+.bk-del { background: var(--danger-light); color: var(--danger); }
+.bk-del:hover { background: #fecaca; }
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .app-header { padding: 10px 16px; gap: 10px; }
+  .app-header h1 { font-size: 15px; }
+  .hdr-r { gap: 6px; }
+  .tab-bar { padding: 0 12px; }
+  .tab-btn { padding: 10px 16px; font-size: 12px; }
+  .main-wrap { padding: 14px 12px; }
+  .day-grid { grid-template-columns: 1fr; gap: 10px; }
+  .fab { bottom: 16px; right: 16px; padding: 12px 20px; font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .app-header { flex-direction: column; align-items: flex-start; }
+  .hdr-r { margin-left: 0; width: 100%; }
+  .week-btn { padding: 6px 14px; font-size: 11px; }
+}
+
+/* ====== PRINT ====== */
+@media print {
+  body { background: #fff; font-size: 10px; }
+  .app-header, .tab-bar, .week-bar, .fab, .toast, .mo,
+  .add-row, .btn-add-s, .btn-rm, .pdel { display: none !important; }
+  .main-wrap { padding: 0; max-width: 100%; }
+  .tab-page { display: none !important; }
+  .tab-page.printing { display: block !important; }
+  .day-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .day-card {
+    box-shadow: none; border: 1px solid #bbb;
+    break-inside: avoid; page-break-inside: avoid;
+    transform: none;
+  }
+  .day-card:hover { transform: none; box-shadow: none; }
+  .dc-hd, .pill.sel, .pill.sel-g {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  @page { size: A4 portrait; margin: 10mm; }
+  .pt {
+    display: block !important;
+    text-align: center;
+    font-size: 16px; font-weight: 900;
+    margin-bottom: 12px;
+    color: var(--g900);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+}
+.pt { display: none; }
+
+/* ====== STAT BAR ====== */
+.stat-bar {
+  display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.stat-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--g200);
+  font-size: 12px; color: var(--g600);
+  display: flex; align-items: center; gap: 8px;
+}
+.stat-card strong {
+  font-size: 20px; color: var(--primary); font-weight: 800;
+}
+.stat-card.green strong { color: var(--secondary); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">D</div>
+  <div class="titles">
+    <h1>Daily Report Manager</h1>
+    <div class="sub">健康チェック＆業務日報 — 入力・管理・PDF出力</div>
+  </div>
+  <div class="hdr-r">
+    <div>
+      <label>ユーザー名</label>
+      <input type="text" id="userName" placeholder="名前を入力">
+    </div>
+    <div>
+      <label>対象月</label>
+      <select id="globalMonth"></select>
+    </div>
+    <button class="btn-h btn-bk" onclick="APP.viewBackups()">📦 バックアップ</button>
+    <button class="btn-h btn-rst" onclick="APP.confirmReset()">🔄 リセット</button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="health">🏥 健康チェック</button>
+  <button class="tab-btn" data-tab="daily">📋 業務日報</button>
+</div>
+
+<div class="main-wrap">
+  <div class="tab-page active" id="page-health">
+    <div class="pt" id="hPT"></div>
+    <div class="stat-bar" id="hStats"></div>
+    <div class="week-bar" id="hWB"></div>
+    <div class="day-grid" id="hGrid"></div>
+  </div>
+  <div class="tab-page" id="page-daily">
+    <div class="pt" id="dPT"></div>
+    <div class="stat-bar" id="dStats"></div>
+    <div class="week-bar" id="dWB"></div>
+    <div class="day-grid" id="dGrid"></div>
+  </div>
+</div>
+
+<button class="fab" onclick="APP.print()">🖨️ PDF出力</button>
+<div class="toast" id="toast"></div>
+
+<div class="mo" id="moReset">
+  <div class="mo-box">
+    <h3>⚠️ リセット確認</h3>
+    <p>
+      現在の<strong id="rstLbl"></strong>のデータをすべてリセットします。<br>
+      リセット前に自動バックアップが作成されます。<br><br>
+      本当にリセットしますか？
+    </p>
+    <div class="mo-btns">
+      <button class="mb-c" onclick="APP.closeModal('moReset')">キャンセル</button>
+      <button class="mb-ok" onclick="APP.execReset()">リセット実行</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="moBackup">
+  <div class="mo-box" style="max-width:620px">
+    <h3>📦 バックアップ一覧</h3>
+    <div id="bkList" style="max-height:320px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="mo-btns">
+      <button class="mb-c" onclick="APP.closeModal('moBackup')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var APP = (function () {
+  "use strict";
+
+  /* ================================================================
+     DEFAULTS
+     ================================================================ */
+  var DEFAULTS = {
+    h_sleep:   { lb: "睡眠の質",       it: ["良い", "普通", "悪い"] },
+    h_mood:    { lb: "前日の総合評価",   it: ["○ 良い", "△ まあまあ", "× 悪い"] },
+    h_temp:    { lb: "体温",           it: ["35℃台", "36.0〜36.4", "36.5〜36.9", "37.0〜37.4", "37.5以上"] },
+    h_weather: { lb: "天気",           it: ["☀️ 晴れ", "⛅ 曇り", "🌧️ 雨", "❄️ 雪"] },
+    h_meal:    { lb: "朝食",           it: ["食べた", "少し食べた", "食べていない"] },
+    h_body:    { lb: "身体の調子",      it: ["○ 良い", "△ まあまあ", "× 悪い"] },
+    h_mental:  { lb: "朝の気分",        it: ["○ 良い", "△ まあまあ", "× 悪い"] },
+    h_meds:    { lb: "服薬状況",        it: ["○ 服用済み", "× 未服用", "該当なし"] },
+    h_stress:  { lb: "ストレス要因",     it: ["なし", "あり"] },
+    h_overall: { lb: "出勤時の総合評価",  it: ["◎ 好調", "● 普通", "▲ 良くない", "★ 絶好調"] },
+
+    d_health:  { lb: "体調",           it: ["良い", "普通", "悪い"] },
+    d_prog:    { lb: "業務・プログラム",  it: ["Office作業", "ビジネスマナー", "自己分析", "グループワーク", "個別作業", "面談", "軽作業", "運動・リフレッシュ"] },
+    d_equip:   { lb: "使用機器",        it: ["PC", "タブレット", "なし"] },
+    d_lunch:   { lb: "昼食",           it: ["弁当（注文）", "外食", "コンビニ", "持参弁当", "食べていない"] },
+    d_amount:  { lb: "食事量",          it: ["100%", "80%", "60%", "40%以下"] }
+  };
+
+  var HEALTH_FIELDS = [
+    "h_sleep", "h_mood", "h_temp", "h_weather", "h_meal",
+    "h_body", "h_mental", "h_meds", "h_stress", "h_overall"
+  ];
+
+  /* ================================================================
+     STATE
+     ================================================================ */
+  var S = { month: null, tab: "health", hWeek: 1, dWeek: 1, name: "" };
+
+  /* ================================================================
+     DOM Helpers
+     ================================================================ */
+  function $(id) { return document.getElementById(id); }
+  function qsa(s, c) { return Array.from((c || document).querySelectorAll(s)); }
+  function el(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  /* ================================================================
+     Data Layer
+     ================================================================ */
+  function sk(m) { return "drm_" + (m || S.month); }
+  function load(m) { try { return JSON.parse(localStorage.getItem(sk(m))) || {}; } catch (e) { return {}; } }
+  function save(d, m) { localStorage.setItem(sk(m || S.month), JSON.stringify(d)); }
+  function getData() { return load(); }
+  function setData(d) { save(d); }
+
+  function getDay(type, day) {
+    var d = getData();
+    if (!d[type]) d[type] = {};
+    if (!d[type][day]) d[type][day] = {};
+    return d[type][day];
+  }
+  function setDay(type, day, val) {
+    var d = getData();
+    if (!d[type]) d[type] = {};
+    d[type][day] = val;
+    setData(d);
+  }
+  function setField(type, day, key, val) {
+    var dd = getDay(type, day);
+    dd[key] = val;
+    setDay(type, day, dd);
+  }
+
+  /* Custom Options */
+  function getCust(key) {
+    var d = getData();
+    return (d._cust && d._cust[key]) || [];
+  }
+  function addCust(key, v) {
+    v = v.trim();
+    if (!v) return;
+    var d = getData();
+    if (!d._cust) d._cust = {};
+    if (!d._cust[key]) d._cust[key] = [];
+    if (d._cust[key].indexOf(v) === -1) {
+      d._cust[key].push(v);
+      setData(d);
+    }
+  }
+  function rmCust(key, v) {
+    var d = getData();
+    if (!d._cust || !d._cust[key]) return;
+    d._cust[key] = d._cust[key].filter(function (x) { return x !== v; });
+    setData(d);
+  }
+  function allOpts(key) {
+    var def = (DEFAULTS[key] && DEFAULTS[key].it) || [];
+    return def.concat(getCust(key));
+  }
+
+  /* ================================================================
+     Month / Week Utilities
+     ================================================================ */
+  function daysInMonth(ym) {
+    var p = ym.split("-");
+    return new Date(+p[0], +p[1], 0).getDate();
+  }
+  function dow(ym, d) {
+    var p = ym.split("-");
+    return ["日", "月", "火", "水", "木", "金", "土"][new Date(+p[0], +p[1] - 1, d).getDay()];
+  }
+  function getWeeks(ym) {
+    var t = daysInMonth(ym), w = [];
+    for (var i = 1; i <= t; i += 7) w.push({ s: i, e: Math.min(i + 6, t) });
+    return w;
+  }
+
+  function initMonth() {
+    var sel = $("globalMonth");
+    sel.innerHTML = "";
+    var now = new Date();
+    for (var m = -3; m <= 12; m++) {
+      var dt = new Date(now.getFullYear(), now.getMonth() + m, 1);
+      var v = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0");
+      var o = document.createElement("option");
+      o.value = v;
+      o.textContent = dt.getFullYear() + "年" + (dt.getMonth() + 1) + "月";
+      sel.appendChild(o);
+    }
+    var cur = localStorage.getItem("drm_curMonth");
+    if (!cur) cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    sel.value = cur;
+    S.month = cur;
+    sel.addEventListener("change", function () {
+      S.month = this.value;
+      localStorage.setItem("drm_curMonth", this.value);
+      S.hWeek = 1;
+      S.dWeek = 1;
+      render();
+    });
+  }
+
+  /* ================================================================
+     Toast
+     ================================================================ */
+  function toast(msg, type) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.className = "toast " + (type || "ok") + " show";
+    setTimeout(function () { t.className = "toast"; }, 2600);
+  }
+
+  /* ================================================================
+     Modal
+     ================================================================ */
+  function closeModal(id) { $(id).classList.remove("show"); }
+
+  /* ================================================================
+     Time Selectors
+     ================================================================ */
+  function bedOpts() {
+    var a = [];
+    for (var h = 20; h <= 28; h++)
+      for (var m = 0; m < 60; m += 30) {
+        var hh = h % 24;
+        a.push(String(hh).padStart(2, "0") + ":" + String(m).padStart(2, "0"));
+      }
+    return a;
+  }
+  function wakeOpts() {
+    var a = [];
+    for (var h = 4; h <= 12; h++)
+      for (var m = 0; m < 60; m += 30)
+        a.push(String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"));
+    return a;
+  }
+  function schedTimeOpts() {
+    var a = [];
+    for (var h = 8; h <= 19; h++)
+      for (var m = 0; m < 60; m += 30)
+        a.push(String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0"));
+    return a;
+  }
+
+  function mkSel(opts, cur, onChange) {
+    var s = document.createElement("select");
+    s.innerHTML = '<option value="">--</option>';
+    opts.forEach(function (v) {
+      var o = document.createElement("option");
+      o.value = v; o.textContent = v;
+      if (v === cur) o.selected = true;
+      s.appendChild(o);
+    });
+    s.addEventListener("change", function () { onChange(this.value); });
+    return s;
+  }
+
+  /* ================================================================
+     Pill Group Builder
+     ================================================================ */
+  function buildPills(container, optKey, curVal, onSelect, greenMode) {
+    container.innerHTML = "";
+    var defItems = (DEFAULTS[optKey] && DEFAULTS[optKey].it) || [];
+    var custItems = getCust(optKey);
+    var cls = greenMode ? "sel-g" : "sel";
+
+    function mkPill(v, isDef) {
+      var p = el("span", "pill" + (isDef ? " default" : " cust") + (v === curVal ? " " + cls : ""));
+      p.dataset.v = v;
+      var t = el("span", "", v);
+      p.appendChild(t);
+      if (!isDef) {
+        var d2 = el("span", "pdel", "×");
+        d2.addEventListener("click", function (e) {
+          e.stopPropagation();
+          rmCust(optKey, v);
+          if (curVal === v) onSelect("");
+          else buildPills(container, optKey, curVal === v ? "" : curVal, onSelect, greenMode);
+        });
+        p.appendChild(d2);
+      }
+      p.addEventListener("click", function () { onSelect(v === curVal ? "" : v); });
+      container.appendChild(p);
+    }
+
+    defItems.forEach(function (v) { mkPill(v, true); });
+    custItems.forEach(function (v) { mkPill(v, false); });
+
+    var ar = el("div", "add-row");
+    var inp = el("input");
+    inp.type = "text"; inp.placeholder = "カスタム追加...";
+    var btn = el("button", "", "＋");
+    btn.addEventListener("click", function () {
+      if (inp.value.trim()) { addCust(optKey, inp.value.trim()); inp.value = ""; render(); }
+    });
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") btn.click(); });
+    ar.appendChild(inp); ar.appendChild(btn);
+    container.appendChild(ar);
+  }
+
+  /* ================================================================
+     Statistics
+     ================================================================ */
+  function renderStats() {
+    var data = getData();
+    var total = daysInMonth(S.month);
+
+    // Health stats
+    var hFilled = 0;
+    if (data.health) {
+      for (var d in data.health) {
+        var day = data.health[d];
+        if (day.h_overall || day.h_temp || day.h_sleep) hFilled++;
+      }
+    }
+    $("hStats").innerHTML = "";
+    var sc1 = el("div", "stat-card", "<strong>" + hFilled + "</strong> / " + total + " 日 記入済み");
+    $("hStats").appendChild(sc1);
+
+    if (data.health) {
+      var goodCount = 0;
+      for (var d2 in data.health) {
+        var ov = data.health[d2].h_overall || "";
+        if (ov.indexOf("好調") !== -1 || ov.indexOf("絶好調") !== -1) goodCount++;
+      }
+      if (goodCount > 0) {
+        var sc2 = el("div", "stat-card green", "<strong>" + goodCount + "</strong> 日 好調");
+        $("hStats").appendChild(sc2);
+      }
+    }
+
+    // Daily stats
+    var dFilled = 0;
+    if (data.daily) {
+      for (var d3 in data.daily) {
+        var dday = data.daily[d3];
+        if (dday.d_health || (dday.scheds && dday.scheds.length > 0)) dFilled++;
+      }
+    }
+    $("dStats").innerHTML = "";
+    var sc3 = el("div", "stat-card green", "<strong>" + dFilled + "</strong> / " + total + " 日 記入済み");
+    $("dStats").appendChild(sc3);
+  }
+
+  /* ================================================================
+     Week Bar
+     ================================================================ */
+  function renderWeekBar(id, weeks, cur, onPick) {
+    var bar = $(id);
+    bar.innerHTML = "";
+    var mo = parseInt(S.month.split("-")[1]);
+    weeks.forEach(function (w, i) {
+      var b = el("button", "week-btn" + (i + 1 === cur ? " active" : ""),
+        "第" + (i + 1) + "週 (" + mo + "/" + w.s + "〜" + mo + "/" + w.e + ")");
+      b.addEventListener("click", function () { onPick(i + 1); });
+      bar.appendChild(b);
+    });
+  }
+
+  /* ================================================================
+     Health Render
+     ================================================================ */
+  function renderHealth() {
+    var ym = S.month, weeks = getWeeks(ym);
+    if (S.hWeek > weeks.length) S.hWeek = weeks.length;
+    var w = weeks[S.hWeek - 1];
+    renderWeekBar("hWB", weeks, S.hWeek, function (n) { S.hWeek = n; renderHealth(); });
+
+    var grid = $("hGrid");
+    grid.innerHTML = "";
+    var mo = parseInt(ym.split("-")[1]);
+
+    for (var day = w.s; day <= w.e; day++) {
+      (function (dy) {
+        var dk = "" + dy, dd = getDay("health", dk);
+        var card = el("div", "day-card");
+        var hd = el("div", "dc-hd hlt", "<span>📅 " + mo + "/" + dy + " (" + dow(ym, dy) + ")</span>");
+        card.appendChild(hd);
+        var bd = el("div", "dc-bd");
+
+        // Sleep time
+        var f0 = el("div", "fld");
+        f0.appendChild(el("div", "fld-lb", "🛏️ 睡眠時間"));
+        var tr = el("div", "time-r");
+        tr.appendChild(el("span", "", "就寝"));
+        tr.appendChild(mkSel(bedOpts(), dd.bedTime || "", function (v) { setField("health", dk, "bedTime", v); }));
+        tr.appendChild(el("span", "", "→ 起床"));
+        tr.appendChild(mkSel(wakeOpts(), dd.wakeTime || "", function (v) { setField("health", dk, "wakeTime", v); }));
+        f0.appendChild(tr);
+        bd.appendChild(f0);
+
+        // Pill fields
+        HEALTH_FIELDS.forEach(function (key) {
+          var f = el("div", "fld");
+          f.appendChild(el("div", "fld-lb", DEFAULTS[key].lb));
+          var pg = el("div", "pg");
+          buildPills(pg, key, dd[key] || "", function (v) {
+            setField("health", dk, key, v);
+            renderHealth();
+          }, false);
+          f.appendChild(pg);
+          bd.appendChild(f);
+        });
+
+        // Memo
+        var f1 = el("div", "fld");
+        f1.appendChild(el("div", "fld-lb", "📝 メモ・備考"));
+        var ta = el("textarea", "ti");
+        ta.rows = 2; ta.placeholder = "自由に記入...";
+        ta.value = dd.memo || "";
+        ta.addEventListener("input", function () { setField("health", dk, "memo", this.value); });
+        f1.appendChild(ta); bd.appendChild(f1);
+
+        // Staff
+        var f2 = el("div", "fld");
+        f2.appendChild(el("div", "fld-lb", "👤 確認者"));
+        var si = el("input", "ti");
+        si.type = "text"; si.placeholder = "確認者名";
+        si.value = dd.staff || "";
+        si.addEventListener("input", function () { setField("health", dk, "staff", this.value); });
+        f2.appendChild(si); bd.appendChild(f2);
+
+        card.appendChild(bd);
+        grid.appendChild(card);
+      })(day);
+    }
+    renderStats();
+  }
+
+  /* ================================================================
+     Daily Render
+     ================================================================ */
+  function renderDaily() {
+    var ym = S.month, weeks = getWeeks(ym);
+    if (S.dWeek > weeks.length) S.dWeek = weeks.length;
+    var w = weeks[S.dWeek - 1];
+    renderWeekBar("dWB", weeks, S.dWeek, function (n) { S.dWeek = n; renderDaily(); });
+
+    var grid = $("dGrid");
+    grid.innerHTML = "";
+    var mo = parseInt(ym.split("-")[1]);
+
+    for (var day = w.s; day <= w.e; day++) {
+      (function (dy) {
+        var dk = "" + dy, dd = getDay("daily", dk);
+        if (!dd.scheds) dd.scheds = [];
+
+        var card = el("div", "day-card");
+        var hd = el("div", "dc-hd dlt", "<span>📅 " + mo + "/" + dy + " (" + dow(ym, dy) + ") 業務日報</span>");
+        card.appendChild(hd);
+        var bd = el("div", "dc-bd");
+
+        // Health pills
+        var fH = el("div", "fld");
+        fH.appendChild(el("div", "fld-lb", "💪 体調"));
+        var pgH = el("div", "pg");
+        buildPills(pgH, "d_health", dd.d_health || "", function (v) {
+          setField("daily", dk, "d_health", v); renderDaily();
+        }, true);
+        fH.appendChild(pgH); bd.appendChild(fH);
+
+        // Schedule
+        var fS = el("div", "fld");
+        fS.appendChild(el("div", "fld-lb", "📋 スケジュール"));
+        var sc = el("div", "sched-container");
+        var currentData = getDay("daily", dk);
+        if (!currentData.scheds) currentData.scheds = [];
+
+        currentData.scheds.forEach(function (sch, idx) {
+          (function (index) {
+            var sb2 = el("div", "sb");
+            var top = el("div", "sb-top");
+
+            top.appendChild(mkSel(schedTimeOpts(), sch.start || "", function (v) {
+              var dd2 = getDay("daily", dk); dd2.scheds[index].start = v; setDay("daily", dk, dd2);
+            }));
+            top.appendChild(el("span", "", "〜"));
+            top.appendChild(mkSel(schedTimeOpts(), sch.end || "", function (v) {
+              var dd2 = getDay("daily", dk); dd2.scheds[index].end = v; setDay("daily", dk, dd2);
+            }));
+
+            var pOpts = allOpts("d_prog");
+            top.appendChild(mkSel(pOpts, sch.prog || "", function (v) {
+              var dd2 = getDay("daily", dk); dd2.scheds[index].prog = v; setDay("daily", dk, dd2);
+            }));
+
+            var eOpts = allOpts("d_equip");
+            top.appendChild(mkSel(eOpts, sch.equip || "", function (v) {
+              var dd2 = getDay("daily", dk); dd2.scheds[index].equip = v; setDay("daily", dk, dd2);
+            }));
+
+            var rm = el("button", "btn-rm", "×");
+            rm.addEventListener("click", function () {
+              var dd2 = getDay("daily", dk); dd2.scheds.splice(index, 1); setDay("daily", dk, dd2); renderDaily();
+            });
+            top.appendChild(rm);
+            sb2.appendChild(top);
+
+            var cmtTa = el("textarea", "ti");
+            cmtTa.rows = 1; cmtTa.placeholder = "進捗・コメント";
+            cmtTa.value = sch.comment || "";
+            cmtTa.addEventListener("input", function () {
+              var dd2 = getDay("daily", dk); dd2.scheds[index].comment = this.value; setDay("daily", dk, dd2);
+            });
+            sb2.appendChild(cmtTa);
+            sc.appendChild(sb2);
+          })(idx);
+        });
+
+        var addBtn = el("button", "btn-add-s grn", "＋ 時間枠を追加");
+        addBtn.addEventListener("click", function () {
+          var dd2 = getDay("daily", dk);
+          if (!dd2.scheds) dd2.scheds = [];
+          dd2.scheds.push({ start: "", end: "", prog: "", equip: "", comment: "" });
+          setDay("daily", dk, dd2); renderDaily();
+        });
+        sc.appendChild(addBtn);
+
+        var arP = el("div", "add-row");
+        arP.style.marginTop = "6px";
+        var inpP = el("input"); inpP.type = "text"; inpP.placeholder = "業務項目を追加...";
+        var btnP = el("button", "", "＋");
+        btnP.addEventListener("click", function () {
+          if (inpP.value.trim()) { addCust("d_prog", inpP.value.trim()); inpP.value = ""; renderDaily(); }
+        });
+        arP.appendChild(inpP); arP.appendChild(btnP); sc.appendChild(arP);
+
+        var arE = el("div", "add-row");
+        var inpE = el("input"); inpE.type = "text"; inpE.placeholder = "使用機器を追加...";
+        var btnE = el("button", "", "＋");
+        btnE.addEventListener("click", function () {
+          if (inpE.value.trim()) { addCust("d_equip", inpE.value.trim()); inpE.value = ""; renderDaily(); }
+        });
+        arE.appendChild(inpE); arE.appendChild(btnE); sc.appendChild(arE);
+
+        fS.appendChild(sc); bd.appendChild(fS);
+
+        // Lunch pills
+        var fL = el("div", "fld");
+        fL.appendChild(el("div", "fld-lb", "🍱 昼食"));
+        var pgL = el("div", "pg");
+        buildPills(pgL, "d_lunch", dd.d_lunch || "", function (v) {
+          setField("daily", dk, "d_lunch", v); renderDaily();
+        }, true);
+        fL.appendChild(pgL); bd.appendChild(fL);
+
+        // Meal amount pills
+        var fA = el("div", "fld");
+        fA.appendChild(el("div", "fld-lb", "🍽️ 食事量"));
+        var pgA = el("div", "pg");
+        buildPills(pgA, "d_amount", dd.d_amount || "", function (v) {
+          setField("daily", dk, "d_amount", v); renderDaily();
+        }, true);
+        fA.appendChild(pgA); bd.appendChild(fA);
+
+        // Goal
+        var fG = el("div", "fld");
+        fG.appendChild(el("div", "fld-lb", "🎯 本日の目標"));
+        var taG = el("textarea", "ti");
+        taG.rows = 2; taG.placeholder = "今日の目標を入力...";
+        taG.value = dd.goal || "";
+        taG.addEventListener("input", function () { setField("daily", dk, "goal", this.value); });
+        fG.appendChild(taG); bd.appendChild(fG);
+
+        // Result
+        var fR = el("div", "fld");
+        fR.appendChild(el("div", "fld-lb", "📊 目標に対する成果"));
+        var taR = el("textarea", "ti");
+        taR.rows = 2; taR.placeholder = "成果を記入...";
+        taR.value = dd.goalResult || "";
+        taR.addEventListener("input", function () { setField("daily", dk, "goalResult", this.value); });
+        fR.appendChild(taR); bd.appendChild(fR);
+
+        // Free comment
+        var fC = el("div", "fld");
+        fC.appendChild(el("div", "fld-lb", "💬 フリーコメント"));
+        var taC = el("textarea", "ti");
+        taC.rows = 2; taC.placeholder = "自由に記入...";
+        taC.value = dd.freeComment || "";
+        taC.addEventListener("input", function () { setField("daily", dk, "freeComment", this.value); });
+        fC.appendChild(taC); bd.appendChild(fC);
+
+        card.appendChild(bd);
+        grid.appendChild(card);
+      })(day);
+    }
+    renderStats();
+  }
+
+  /* ================================================================
+     Render
+     ================================================================ */
+  function render() {
+    if (S.tab === "health") renderHealth(); else renderDaily();
+  }
+
+  /* ================================================================
+     Tab Switch
+     ================================================================ */
+  qsa(".tab-btn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      qsa(".tab-btn").forEach(function (x) { x.classList.remove("active"); });
+      this.classList.add("active");
+      S.tab = this.dataset.tab;
+      qsa(".tab-page").forEach(function (p) { p.classList.remove("active"); });
+      $("page-" + S.tab).classList.add("active");
+      render();
+    });
+  });
+
+  /* ================================================================
+     Print
+     ================================================================ */
+  function doPrint() {
+    var ym = S.month.split("-"), yr = ym[0], mo = parseInt(ym[1]);
+    var weeks = getWeeks(S.month);
+    var wn = S.tab === "health" ? S.hWeek : S.dWeek;
+    var w = weeks[wn - 1];
+    var name = S.name || "ユーザー";
+    var tabLabel = S.tab === "health" ? "健康チェック" : "業務日報";
+
+    var ptId = S.tab === "health" ? "hPT" : "dPT";
+    $(ptId).textContent = tabLabel + " " + yr + "年" + mo + "月 第" + wn + "週 (" + mo + "/" + w.s + "〜" + mo + "/" + w.e + ") — " + name;
+
+    qsa(".tab-page").forEach(function (p) { p.classList.remove("printing"); });
+    $("page-" + S.tab).classList.add("printing");
+
+    var orig = document.title;
+    document.title = tabLabel + "_" + yr + "年" + mo + "月_第" + wn + "週_" + name;
+    setTimeout(function () {
+      window.print();
+      document.title = orig;
+      $("page-" + S.tab).classList.remove("printing");
+    }, 300);
+  }
+
+  /* ================================================================
+     Reset & Backup
+     ================================================================ */
+  function confirmReset() {
+    var ym = S.month.split("-");
+    $("rstLbl").textContent = ym[0] + "年" + parseInt(ym[1]) + "月";
+    $("moReset").classList.add("show");
+  }
+
+  function execReset() {
+    closeModal("moReset");
+    var data = getData();
+    var bKey = "drm_bk_" + S.month + "_" + Date.now();
+    localStorage.setItem(bKey, JSON.stringify({ month: S.month, date: new Date().toISOString(), data: data }));
+    localStorage.removeItem(sk());
+    toast("バックアップ完了 → データをリセットしました", "ok");
+    render();
+  }
+
+  function viewBackups() {
+    var list = $("bkList");
+    list.innerHTML = "";
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k.indexOf("drm_bk_") === 0) keys.push(k);
+    }
+    keys.sort().reverse();
+    if (!keys.length) {
+      list.innerHTML = '<p style="color:#64748b;font-size:13px;padding:16px 0;text-align:center">バックアップはまだありません。</p>';
+    } else {
+      keys.forEach(function (k) {
+        var obj;
+        try { obj = JSON.parse(localStorage.getItem(k)); } catch (e) { return; }
+        var div = el("div", "bk-item");
+        var dt = new Date(obj.date);
+        div.innerHTML = '<div><strong>' + obj.month + '</strong> — ' + dt.toLocaleString("ja-JP") + '</div><div></div>';
+        var btns = div.lastElementChild;
+
+        var bRestore = el("button", "bk-restore", "復元");
+        bRestore.addEventListener("click", (function (o) {
+          return function () {
+            if (!confirm(o.month + "のデータを復元しますか？")) return;
+            save(o.data, o.month);
+            S.month = o.month; $("globalMonth").value = o.month;
+            localStorage.setItem("drm_curMonth", o.month);
+            closeModal("moBackup"); render(); toast("復元しました", "ok");
+          };
+        })(obj));
+        btns.appendChild(bRestore);
+
+        var bDl = el("button", "bk-dl", "JSON保存");
+        bDl.addEventListener("click", (function (o) {
+          return function () {
+            var blob = new Blob([JSON.stringify(o, null, 2)], { type: "application/json" });
+            var a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+            a.download = "backup_" + o.month + "_" + Date.now() + ".json"; a.click();
+          };
+        })(obj));
+        btns.appendChild(bDl);
+
+        var bDel = el("button", "bk-del", "削除");
+        bDel.addEventListener("click", (function (key2) {
+          return function () {
+            if (!confirm("このバックアップを削除しますか？")) return;
+            localStorage.removeItem(key2); viewBackups(); toast("バックアップを削除しました", "warn");
+          };
+        })(k));
+        btns.appendChild(bDel);
+
+        list.appendChild(div);
+      });
+    }
+    $("moBackup").classList.add("show");
+  }
+
+  /* ================================================================
+     Name
+     ================================================================ */
+  function initName() {
+    var inp = $("userName");
+    var saved = localStorage.getItem("drm_name") || "";
+    inp.value = saved; S.name = saved;
+    inp.addEventListener("input", function () {
+      S.name = this.value;
+      localStorage.setItem("drm_name", this.value);
+    });
+  }
+
+  /* ================================================================
+     Init
+     ================================================================ */
+  initName();
+  initMonth();
+  render();
+
+  /* ================================================================
+     Public API
+     ================================================================ */
+  return {
+    print: doPrint,
+    confirmReset: confirmReset,
+    execReset: execReset,
+    viewBackups: viewBackups,
+    closeModal: closeModal
+  };
+})();
+</script>
+</body>
+</html>
